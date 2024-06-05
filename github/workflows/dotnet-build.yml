@@ -16,7 +16,7 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 O status dessa action é: ${{ job.status }}."
-
+      
 
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
