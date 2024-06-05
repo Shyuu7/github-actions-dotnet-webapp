@@ -18,26 +18,36 @@ jobs:
       matrix:
         dotnet-version: ['3.1.x', '6.0.x']
     steps:
-      - run: echo " Testando a nova funcionalidade do GitHub Workflows!"
       - name: Check out repository code
         uses: actions/checkout@v4
+      
       - run: echo "💡 O repositório ${{ github.repository }} foi clonado para o runner."
+      
       - run: echo "🖥️ O workflow está pronto para testar o código no seu runner."
+      
       - name: Listar arquivos do repositório
-        run: |
-          ls ${{ github.workspace }}
+        run: ls ${{ github.workspace }}
+
       - name: Setup dotnet
         uses: actions/setup-dotnet@v3
         with:
           dotnet-version: ${{ matrix.dotnet-version }}
+
+      - name: Install dependencies
+        run: dotnet restore
+        working-directory: github4women
+
       - name: Test with dotnet
         run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+        working-directory: github4women
+
       - name: Upload dotnet test results
         uses: actions/upload-artifact@v4
         with:
           name: dotnet-results-${{ matrix.dotnet-version }}
-          path: TestResults-${{ matrix.dotnet-version }}
+          path: "github4women/TestResults-${{ matrix.dotnet-version }}"
         if: ${{ always() }}
+
       - run: echo "🍏 O status dessa action é ${{ job.status }}."
 
   scan-scheduled:
