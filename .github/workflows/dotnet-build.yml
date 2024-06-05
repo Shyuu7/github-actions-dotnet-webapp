@@ -1,14 +1,23 @@
-name: GitHub Actions Demo
-run-name: ${{ github.actor }} está testando o GitHub Actions! 🚀
+name: testing workflows
+run-name: ${{ github.actor }} está testando o GitHub Actions! 🚀 Testando um .net package e um code check
 
-on: 
+on:
   schedule:
-  - cron: '36 18 * * 3'
+    - cron: '18 16 * * 1'
+  push:
+    branches: ["master"]
+
+permissions:
+  security-events: write
+  contents: read
+
 jobs:
-  Explore-GitHub-Actions:
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dotnet-version: ['3.1.x', '6.0.x']
     steps:
-      - run: echo "🔎 O nome da sua branch é ${{ github.ref }} e o seu repositório é ${{ github.repository }}."
       - run: echo " Testando a nova funcionalidade do GitHub Workflows!"
       - name: Check out repository code
         uses: actions/checkout@v4
@@ -17,31 +26,35 @@ jobs:
       - name: Listar arquivos do repositório
         run: |
           ls ${{ github.workspace }}
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: ${{ matrix.dotnet-version }}
+      - name: Install dependencies
+        run: dotnet restore
+      - name: Test with dotnet
+        run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
+      - name: Upload dotnet test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotnet-results-${{ matrix.dotnet-version }}
+          path: TestResults-${{ matrix.dotnet-version }}
+        if: ${{ always() }}
       - run: echo "🍏 O status dessa action é ${{ job.status }}."
-  
-on: [push]
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        dotnet-version: [ '3.1.x', '6.0.x' ]
+  scan-scheduled:
+    if: ${{ github.event_name == 'push' || github.event_name == 'schedule' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78"
+    with:
+      scan-args: |-
+        -r
+        --skip-git
+        ./
 
-      steps:
-        - uses: actions/checkout@v4
-        - name: Setup dotnet
-          uses: actions/setup-dotnet@v3
-          with:
-            dotnet-version: ${{ matrix.dotnet-version }}
-        - name: Install dependencies
-          run: dotnet restore
-        - name: Test with dotnet
-          run: dotnet test --logger trx --results-directory "TestResults-${{ matrix.dotnet-version }}"
-        - name: Upload dotnet test results
-          uses: actions/upload-artifact@v4
-          with:
-            name: dotnet-results-${{ matrix.dotnet-version }}
-            path: TestResults-${{ matrix.dotnet-version }}
-          # Use always() to always run this step to publish test results when there are test failures
-          if: ${{ always() }}
+  scan-pr:
+    if: ${{ github.event_name == 'pull_request' || github.event_name == 'merge_group' }}
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable-pr.yml@1f1242919d8a60496dd1874b24b62b2370ed4c78"
+    with:
+      scan-args: |-
+        -r
+        --skip-git
