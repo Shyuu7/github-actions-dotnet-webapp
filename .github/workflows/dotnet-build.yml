@@ -17,8 +17,6 @@ jobs:
           ls ${{ github.workspace }}
       - run: echo "🍏 O status dessa action é: ${{ job.status }}."
 
-
-
 # This workflow uses actions that are not certified by GitHub.
 # They are provided by a third-party and are governed by
 # separate terms of service, privacy policy, and support
@@ -67,9 +65,6 @@ jobs:
         -r
         --skip-git
         ./
- 
-
-
 
 name: dotnet package
 
@@ -99,4 +94,3 @@ jobs:
             path: TestResults-${{ matrix.dotnet-version }}
           # Use always() to always run this step to publish test results when there are test failures
           if: ${{ always() }}
-
